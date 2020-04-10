@@ -1,0 +1,39 @@
+{
+  "VERSION": "x.x type",
+  "DESCRIPTION": "a basic base for bots, designed by taciturasa.",
+  "PREFIX": ["basicbot!"],
+  "REPO": "",
+  "SERVER": "",
+  "TOKEN": "",
+
+  "MAINTENANCE": false,
+  "CASE_INSENSITIVE": true,
+  "PREFIXLESS_DMS": true,
+  "MENTION_ASSIST": true,
+  "CUSTOM_HELP": true,
+  
+  "PERMS": null,
+  "BLOCKED": [],
+
+  "BOTLISTS": {
+    "DBL": "",
+    "DBOTS": "",
+    "BOD": "",
+    "DBLCOM": ""
+  },
+
+  "HOOKS": {
+    "INFO_HOOK": "",
+    "WARN_HOOK": "",
+    "ERROR_HOOK": "",
+    "DEBUG_HOOK": ""
+  },
+
+  "RETHINK": {
+	  "DB": "",
+	  "USERNAME": "",
+	  "PASSWORD": "",
+	  "HOST": "",
+    "PORT": null
+  }
+}
