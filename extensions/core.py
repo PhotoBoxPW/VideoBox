@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# tacibot core
+# videobox core
 # Handles all important main features of any bot.
 
 '''Core File'''
@@ -11,10 +11,12 @@ from discord.ext import commands
 import time
 import asyncio
 import sys
-import cpuinfo
+import humanize
 import math
 import psutil
+from datetime import datetime
 from extensions.models.help import TaciHelpCommand
+from extensions.utils import checks
 
 
 class Core(commands.Cog):
@@ -54,173 +56,51 @@ class Core(commands.Cog):
         elif TB <= B:
             return '{0:.2f} TB'.format(B/TB)
 
-    @commands.command(aliases=['info', 'source', 'server'])
-    async def about(self, ctx):
-        """Returns information about this bot."""
-
-        msg = f"__**{self.bot.user.name}**__ - _{self.bot.description}_\n\n"
-        msg += f"This instance by **{self.bot.appinfo.owner}.**\n\n"
-        if self.bot.repo:
-            msg += f"**Source Code:** _<{self.bot.repo}>_\n"
-        if self.bot.support_server:
-            msg += f"**Support Server:** _<{self.bot.support_server}>_\n\n"
-        msg += "_Note: Please attempt to contact the hoster of any separate instances before this server._\n"
-        msg += f"_See **{ctx.prefix}**`help` for help, `invite` to add the bot, and `stats` for statistics._"
-
-        await ctx.send(msg)
-
-    @commands.command(aliases=['addbot', 'connect', 'join'])
+    @commands.command(aliases=['✉', '📧'])
     async def invite(self, ctx):
         """Gets a link to invite this bot to your server."""
+        await ctx.send(f"<https://discordapp.com/oauth2/authorize?client_id={self.bot.user.id}&scope=bot>")
 
-        msg = (
-            "**Thanks for checking me out!**\n\n"
-            "Use the following link to add me:\n"
-            f"*<https://discordapp.com/oauth2/authorize?client_id={self.bot.user.id}&scope=bot"
-        )
+    @commands.command(aliases=['🗄'])
+    async def serverinvite(self, ctx):
+        """Gets the server invite link."""
+        await ctx.send(f"<https://join.photobox.pw/>")
 
-        if self.bot.perms:
-            msg += f"&permissions={self.bot.perms}>*"
-        else:
-            msg += ">*"
-
-        await ctx.send(msg)
-
-    @commands.command()
-    async def stats(self, ctx):
-        """Provides statistics on the bot itself."""
-
-        mem = psutil.virtual_memory()
+    @commands.command(aliases=['ℹ'])
+    async def info(self, ctx):
+        """Provides info on the bot itself."""
+        
         currproc = psutil.Process(os.getpid())
-        total_ram = self._humanbytes(mem[0])
-        available_ram = self._humanbytes(mem[1])
         usage = self._humanbytes(currproc.memory_info().rss)
-        msg = f"""
-```
-Total RAM: {total_ram}
-Available RAM: {available_ram}
-RAM used by bot: {usage}
-Number of bot commands: {len(ctx.bot.commands)}
-Number of extensions present: {len(ctx.bot.cogs)}
-```
-"""
-        await ctx.send(msg)
+        proc_start = datetime.fromtimestamp(currproc.create_time())
+        embed = discord.Embed(
+            title="VideoBox Information",
+            description='\n'.join([
+                f"**:bulb: WS Ping:** {int(ctx.bot.latency * 1000)}",
+                "**:bust_in_silhouette: Creator:** Snazzah (https://snazzah.com/)",
+                "**:file_folder: GitHub Repo:** [Snazzah/VideoBox](https://github.com/Snazzah/VideoBox)",
+                F"**:computer: Version:** {ctx.bot.config['version']}",
+                f"**:clock: Uptime:** {humanize.naturaldelta(datetime.now() - proc_start)}",
+                f"**:gear: Memory Usage:** {usage}",
+                f"**:file_cabinet: Servers:** {len(ctx.bot.guilds):,}",
+                f"**:gear: Commands:** {len(ctx.bot.commands):,}",
+                f"**:gear: Extensions:** {len(ctx.bot.cogs):,}"
+            ])
+        )
+        embed.set_thumbnail(url="https://raw.githubusercontent.com/Snazzah/PhotoBox/master/avatar.png")
+        if ctx.bot.config.get('color'):
+            embed.color = ctx.bot.config.get('color')
+        await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(aliases=['pong', '🏓'])
     async def ping(self, ctx):
         """Checks the ping of the bot."""
 
         before = time.monotonic()
-        pong = await ctx.send("...")
+        pong = await ctx.send("> 🏓 Ping...")
         after = time.monotonic()
         ping = (after - before) * 1000
-        await pong.edit(content="`PING discordapp.com {}ms`".format(int(ping)))
-
-    @commands.group(aliases=['extensions', 'ext'], 
-                    invoke_without_command=True)
-    @commands.is_owner()
-    async def extend(self, ctx, name:str = None):
-        """Provides status of extensions and lets you hotswap extensions."""
-
-        # Provides status of extension
-        if name is not None:
-            status = "is" if name in self.extensions_list else "is not"
-            msg = f"**{name}** {status} currently loaded and/or existent."
-
-        # Handles empty calls
-        else:
-            msg = (
-                "**Nothing was provided!**\n\n"
-                "Please provide an extension name for status, "
-                "or provide a subcommand."
-            )
-
-        # Sends completed message
-        await ctx.send(msg)
-
-    @extend.command(aliases=['le', 'l'])
-    @commands.is_owner()
-    async def load(self, ctx, name: str):
-        """Load an extension into the bot."""
-        m = await ctx.send(f'Loading {name}')
-        extension_name = f'extensions.{name}'
-        if extension_name not in self.extensions_list:
-            try:
-                self.bot.load_extension(extension_name)
-                self.extensions_list.append(extension_name)
-                await m.edit(content='Extension loaded.')
-            except Exception as e:
-                await m.edit(
-                    content=f'Error while loading {name}\n`{type(e).__name__}: {e}`')
-        else:
-            await m.edit(content='Extension already loaded.')
-
-    @extend.command(aliases=["ule", "ul"])
-    @commands.is_owner()
-    async def unload(self, ctx, name: str):
-        """Unload an extension from the bot."""
-
-        m = await ctx.send(f'Unloading {name}')
-        extension_name = f'extensions.{name}'
-        if extension_name in self.extensions_list:
-            self.bot.unload_extension(extension_name)
-            self.extensions_list.remove(extension_name)
-            await m.edit(content='Extension unloaded.')
-        else:
-            await m.edit(content='Extension not found or not loaded.')
-
-    @extend.command(aliases=["rle", "rl"])
-    @commands.is_owner()
-    async def reload(self, ctx, name: str):
-        """Reload an extension of the bot."""
-
-        m = await ctx.send(f'Reloading {name}')
-        extension_name = f'extensions.{name}'
-        if extension_name in self.extensions_list:
-            self.bot.unload_extension(extension_name)
-            try:
-                self.bot.load_extension(extension_name)
-                await m.edit(content='Extension reloaded.')
-            except Exception as e:
-                self.extensions_list.remove(extension_name)
-                await m.edit(
-                    content=f'Failed to reload extension\n`{type(e).__name__}: {e}`')
-        else:
-            await m.edit(content='Extension isn\'t loaded.')
-
-    @extend.command(name='list')
-    async def list_cmd(self, ctx):
-        """Lists all extensions loaded by the bot."""
-
-        # Message Construction
-        msg = "**Loaded Extensions**\n\n"
-        msg += '\n'.join(f'`{e}`' for e in self.extensions_list)
-        msg += "\n\n_See the other subcommands of this command to manage them._"
-
-        # Message Sending
-        await ctx.send(msg)
-
-    @commands.command(aliases=['exit', 'reboot'])
-    @commands.is_owner()
-    async def restart(self, ctx):
-        """Turns the bot off."""
-
-        await ctx.send(":zzz: **Restarting...**")
-        exit()
-
-    @commands.command()
-    @commands.is_owner()
-    async def leave(self, ctx):
-        """Makes the bot leave the server this was called in."""
-        
-        if ctx.guild:
-            await ctx.send(
-                "\U0001F4A8 **Leaving server.** "
-                "_If you want me back, add me or get an admin to._")
-            await ctx.guild.leave()
-        else:
-            await ctx.send(
-                "**Can't leave!** _This channel is not inside a guild._")
+        await pong.edit(content=f"> 🏓 **Pong!**\n> WS: {int(ctx.bot.latency * 1000)} ms\n> REST: {int(ping)} ms")
 
     def cog_unload(self):
         self.bot.help_command = self._original_help_command

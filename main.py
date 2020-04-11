@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# search - a tiny little search utility bot for discord.
-# All original work by taciturasa, with some code by ry00001.
+# VideoBox - a bot that creates funny videos.
+# All original work by Snazzah, tacibase by taciturasa with some code by ry00001.
 # Used and modified with permission.
 # See LICENSE for license information.
 
@@ -15,8 +15,8 @@ import os
 import sys
 import asyncio
 import aiohttp
-import rethinkdb
 from typing import List, Optional
+from dbots import ClientPoster
 
 
 class Bot(commands.Bot):
@@ -35,27 +35,15 @@ class Bot(commands.Bot):
             self.config = json.load(f)
 
             # Info
-            self.prefix: List[str] = self.config['PREFIX']
-            self.version: str = self.config['VERSION']
-            self.description: str = self.config['DESCRIPTION']
-            self.repo: str = self.config['REPO']
-            self.support_server: str = self.config['SERVER']
-            self.perms: int = self.config['PERMS']
+            self.prefix: List[str] = self.config['prefixes']
+            self.version: str = self.config['version']
 
             # Toggles
-            self.maintenance: bool = self.config['MAINTENANCE']
-            self.case_insensitive: bool = self.config['CASE_INSENSITIVE']
-            self.custom_help: bool = self.config['CUSTOM_HELP']
-            self.mention_assist: bool = self.config['MENTION_ASSIST']
-            self.prefixless_dms: bool = self.config['PREFIXLESS_DMS']
+            self.case_insensitive: bool = self.config['case_insensitive']
+            self.custom_help: bool = self.config['custom_help']
 
-        # RethinkDB
-        if self.config['RETHINK']['DB']:
-            self.re = rethinkdb.RethinkDB()
-            self.re.set_loop_type('asyncio')
-            self.rdb: str = self.config['RETHINK']['DB']
-            self.conn = None
-            self.rtables: List[str] = []
+            # Poster
+            self.poster = ClientPoster(self, 'discord.py', api_keys = self.config['botlist'])
 
     def _init_extensions(self):
         """Initializes extensions."""
@@ -97,57 +85,18 @@ class Bot(commands.Bot):
                 except Exception as e:
                     print(e)
 
-    async def _init_rethinkdb(self):
-        """Initializes RethinkDB."""
-
-        # Prerequisites
-        dbc = self.config['RETHINK']
-
-        # Error handling the initialization
-        try:
-            # Create connection
-            self.conn = await self.re.connect(
-                host=dbc['HOST'],
-                port=dbc['PORT'],
-                db=dbc['DB'],
-                user=dbc['USERNAME'],
-                password=dbc['PASSWORD']
-            )
-
-            # Create or get database
-            dbs = await self.re.db_list().run(self.conn)
-            if self.rdb not in dbs:
-                print('Database not present. Creating...')
-                await self.re.db_create(self.rdb).run(self.conn)
-
-            # Append any existing tables to rtables
-            tables = await self.re.db(self.rdb).table_list().run(self.conn)
-            self.rtables.extend(tables)
-
-        # Exit if fails bc bot can't run without db
-        except Exception as e:
-            print('RethinkDB init error!\n{}: {}'.format(type(e).__name__, e))
-            sys.exit(1)
-
-        print('RethinkDB initialisation successful.')
-
     async def _get_prefix_new(self, bot, msg):
         """More flexible check for prefix."""
-
-        # Adds empty prefix if in DMs
-        if isinstance(msg.channel, discord.DMChannel) and self.prefixless_dms:
-            plus_empty = self.prefix.copy()
-            plus_empty.append('')
-            return commands.when_mentioned_or(*plus_empty)(bot, msg)
-
-        # Keeps regular if not
-        else:
-            return commands.when_mentioned_or(*self.prefix)(bot, msg)
+        return commands.when_mentioned_or(*self.prefix)(bot, msg)
 
     async def on_ready(self):
         """Initializes the main portion of the bot once it has connected."""
 
         print('Connected.\n')
+
+        if len(self.config['botlist']) != 0:
+            await self.poster.post()
+            self.poster.start_loop()
 
         # Prerequisites
         if not hasattr(self, 'request'):
@@ -157,28 +106,13 @@ class Bot(commands.Bot):
         if self.description == '':
             self.description = self.appinfo.description
 
-        # Maintenance Mode
-        if self.maintenance:
-            await self.change_presence(
-                activity=discord.Activity(
-                    name="Maintenance",
-                    type=discord.ActivityType.watching
-                ),
-                status=discord.Status.dnd
-            )
-        else:
-            await self.change_presence(
-                activity=discord.Activity(
-                    name=f"@{self.user.name}",
-                    type=discord.ActivityType.listening
-                ),
-                status=discord.Status.online
-            )
-
-        # NOTE Rethink Entry Point
-        # Initializes all rethink stuff
-        if hasattr(self.rdb, self) and not self.rtables:
-            await self._init_rethinkdb()
+        await self.change_presence(
+            activity=discord.Activity(
+                name="FFMPEG render videos | 📹help",
+                type=discord.ActivityType.watching
+            ),
+            status=discord.Status.online
+        )
 
         # NOTE Extension Entry Point
         # Loads core, which loads all other extensions
@@ -187,50 +121,17 @@ class Bot(commands.Bot):
 
         print('Initialized.\n')
 
-        # Logging
-        msg = "ALL ENGINES GO!\n"
-        msg += "-----------------------------\n"
-        msg += f"ACCOUNT: {bot.user}\n"
-        msg += f"OWNER: {self.appinfo.owner}\n"
-        msg += "-----------------------------\n"
-        print(msg)
-
-        await self.logging.info(content=msg, name="On Ready")
-
     async def on_message(self, message):
         """Handles what the bot does whenever a message comes across."""
 
-        # Prerequisites
-        mentions = [self.user.mention, f'<@!{self.user.id}>']
         ctx = await self.get_context(message)
 
-        # Avoid warnings while loading
         if not hasattr(bot, 'appinfo'):
             return
-
-        # Handling
-        # Turn away bots
-        elif message.author.bot:
+        elif message.author.bot or message.type != discord.MessageType.default:
             return
-
-        # Ignore blocked users
-        elif message.author.id in self.config.get('BLOCKED'):
+        elif message.author.id in self.config.get('blocked'):
             return
-
-        # Maintenance mode
-        elif self.maintenance and not message.author.id == bot.appinfo.owner.id:
-            return
-
-        # Empty ping for assistance
-        elif message.content in mentions and self.mention_assist:
-            assist_msg = (
-                "**Hi there! How can I help?**\n\n"
-                # Two New Lines Here
-                f"You may use **{self.user.mention} `term here`** to search, "
-                f"or **{self.user.mention} `help`** for assistance.")
-            await ctx.send(assist_msg)
-
-        # Move on to command handling
         else:
             await self.process_commands(message)
 
@@ -242,35 +143,28 @@ bot = Bot()
 @bot.listen()
 async def on_command_error(ctx, error):
     """Handles all errors stemming from ext.commands."""
+    print(error)
 
-    # Lets other cogs handle CommandNotFound.
-    # Change this if you want command not found handling
-    if isinstance(error, commands.CommandNotFound)or isinstance(error, commands.CheckFailure):
+    if isinstance(error, commands.CommandNotFound) or isinstance(error, commands.CheckFailure):
+        return
+
+    if isinstance(error, commands.CommandOnCooldown):
+        await ctx.send(F"⏱️ **This command is on a cooldown!** Wait {error.retry_after:.0f} seconds before executing!")
         return
 
     # Provides a very pretty embed if something's actually a dev's fault.
     elif isinstance(error, commands.CommandInvokeError):
 
         # Prerequisites
-        embed_fallback = f"**An error occured: {type(error).__name__}. Please contact {bot.appinfo.owner}.**"
-        error_embed = await bot.logging.error(
-            error, ctx,
-            ctx.command.cog.qualified_name if ctx.command.cog.qualified_name
-            else "DMs"
-        )
+        embed_fallback = f"**An error occured: {type(error).__name__}. Please contact Snazzah.**"
 
         # Sending
-        await ctx.send(embed_fallback, embed=error_embed)
+        await ctx.send(embed_fallback)
 
     # If anything else goes wrong, just go ahead and send it in chat.
     else:
-        await bot.logging.error(
-            error, ctx,
-            ctx.command.cog.qualified_name if ctx.command.cog.qualified_name
-            else "DMs"
-        )
         await ctx.send(error)
 # NOTE Bot Entry Point
 # Starts the bot
 print("Connecting...\n")
-bot.run(bot.config['TOKEN'])
+bot.run(bot.config['token'])

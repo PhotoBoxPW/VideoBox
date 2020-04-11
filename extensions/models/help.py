@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# tacibot helpcmd
+# videobox helpcmd
 # Provides a new custom help command with some pretty formatting
 
 '''HelpCmd File'''
@@ -25,7 +25,7 @@ class TaciHelpCommand(commands.MinimalHelpCommand):
         bot = self.context.bot
 
         # __**name v0.0**__ - _description_
-        return f"__**{bot.user.name} v{bot.config['VERSION']}**__ - _{bot.description}_"
+        return f"__**{bot.user.name} v{bot.config['version']}**__ - _AAAA_"
 
     def get_ending_note(self):
         """Provides the footer for all help commands."""
@@ -39,8 +39,6 @@ class TaciHelpCommand(commands.MinimalHelpCommand):
             # `prefix!command [category/command/subcommand]`
             f"`{self.clean_prefix}{command_name} [category/command/subcommand]`._"
         )
-        if bot.config['PREFIXLESS_DMS']:
-            end_note += f"\n_You can also use all commands without a prefix in DMs._"
 
         return end_note
 
@@ -48,7 +46,11 @@ class TaciHelpCommand(commands.MinimalHelpCommand):
         """Gets the syntax string for a command."""
 
         # **`prefix!command [parameters]`**
-        return f"**`{self.clean_prefix}{command.qualified_name} {command.signature}`**"
+        params = ""
+        if command.signature:
+            params = f" {command.signature}"
+
+        return f"**`{self.clean_prefix}{command.qualified_name}{params}`**"
 
     def add_aliases_formatting(self, aliases):
         """Adds a listing of aliases to a command help."""
@@ -93,43 +95,35 @@ class TaciHelpCommand(commands.MinimalHelpCommand):
         else:
             line = f"`{command.qualified_name}`"
         self.paginator.add_line(line)
+    
+    def get_bot_prefixes(self):
+        prefixes = [
+            f"<@{self.context.bot.user.id}>"
+        ]
 
-    def add_bot_commands_formatting(self, commands, heading):
-        """Adds the entry for each cog and command in the main help."""
+        for prefix in self.context.bot.config['prefixes']:
+            if prefix.endswith(' '):
+                continue
+            prefixes.append(f"`{prefix}`")
 
-        if commands:
-            # **Cog Name**
-            self.paginator.add_line(f"**{heading}**")
-
-            # TODO Make the Core Dynamic
-            if heading == '\U0001F4E6  Core':
-                # `command1`, `command2`, `command3`
-                # On Same Line
-                self.paginator.add_line(", ".join(f"`{c.name}`" for c in commands))
-            else:
-                # `command` - description
-                # On new lines
-                for c in commands:
-                    self.paginator.add_line(f"`{c.name}` - {c.short_doc}")
+        return prefixes
             
-            # New Line
-            self.paginator.add_line()
-
     async def send_bot_help(self, mapping):
         """Sends the entire help for the bot."""
 
-        # Prerequisites
+        embed = discord.Embed(
+            description=(
+                f"**VideoBox** by Snazzah\n\n"
+                f"**Prefixes:** {', '.join(self.get_bot_prefixes())}\n"
+                f"`{self.clean_prefix}{self.invoked_with} [category/command/subcommand]` for more info"
+            )
+        )
+
         ctx = self.context
         bot = ctx.bot
         main_cmds = []
         other_cmds = {}
 
-        # Adds the header if there
-        note = self.get_opening_note()
-        if note:
-            self.paginator.add_line(note, empty=True)
-
-        # Gets the category for each command in the bot
         no_category = f"\u200b{self.no_category}"
         def get_category(command, *, no_category=no_category):
             cog = command.cog
@@ -138,64 +132,40 @@ class TaciHelpCommand(commands.MinimalHelpCommand):
             else:
                 return no_category
 
-        # Gets all commands and categories to iterate over
         filtered = await self.filter_commands(bot.commands, sort=True, key=get_category)
         to_iterate = itertools.groupby(filtered, key=get_category)
 
         # Splits Bot List and Core commands out of the others
         for category, commands in to_iterate:
-            commands = sorted(commands, key=lambda c: c.name) if self.sort_commands else list(commands)
-            if category in ['\U0001F4E6  Core', '\U0001F5F3  Bot List']:
-                main_cmds.extend(commands) 
-            else:
-                other_cmds[category] = commands
-        
-        # Core/Bot List commands become compacted
-        self.add_bot_commands_formatting(main_cmds, '\U0001F4E6  Core')
+            embed.add_field(name=f"**{category}**", value=", ".join(f"`{c.name}`" for c in commands))
 
-        # Everything else is normal
-        for category, commands in other_cmds.items():
-            self.add_bot_commands_formatting(commands, category)
+        if self.context.bot.config.get('color'):
+            embed.color = self.context.bot.config.get('color')
 
-        # Adds the footer if there
-        note = self.get_ending_note()
-        if note:
-            self.paginator.add_line(note)
-
-        # Sends the completed help output
-        await self.send_pages()
+        await self.context.send(embed=embed)
 
     async def send_cog_help(self, cog):
         """Sends the help for a cog."""
 
-        # Adds the header if there
-        note = self.get_opening_note()
-        if note:
-            self.paginator.add_line(note, empty=True)
-            # New Line
+        embed = discord.Embed(
+            title=f"{cog.emoji}  **{cog.qualified_name}**" if cog.emoji else f"{cog.qualified_name}"
+        )
 
-        # **Cog Name**
-        self.paginator.add_line(
-            f"{cog.emoji}  **{cog.qualified_name}**" if cog.emoji else f"{cog.qualified_name}")
-
-        # _Description if there_
         if cog.description:
-            self.paginator.add_line(f"_{cog.description}_", empty=True)
+            embed.description = cog.description.strip()
 
         # Lists all commands in the cog
         filtered = await self.filter_commands(cog.get_commands(), sort=self.sort_commands)
         if filtered:
-            for command in filtered:
-                self.add_subcommand_formatting(command)
+            embed.add_field(
+                name="**Commands**",
+                value=", ".join(f"`{c.name}`" for c in filtered)
+            )
 
-        # Adds the footer if there
-        note = self.get_ending_note()
-        if note:
-            self.paginator.add_line()  # New Line
-            self.paginator.add_line(note)
+        if self.context.bot.config.get('color'):
+            embed.color = self.context.bot.config.get('color')
 
-        # Sends the completed help output
-        await self.send_pages()
+        await self.context.send(embed=embed)
 
     async def send_group_help(self, group):      
         """Sends the help for a command group."""
@@ -230,23 +200,32 @@ class TaciHelpCommand(commands.MinimalHelpCommand):
     async def send_command_help(self, command):
         """Sends the help for a single command."""
 
-        # Adds the header if there
-        note = self.get_opening_note()
-        if note:
-            self.paginator.add_line(note, empty=True)
-            # New Line
+        params = ""
+        if command.signature:
+            params = f" {command.signature}"
 
-        # Adds the formatting for the command
-        self.add_command_formatting(command)
+        embed = discord.Embed(
+            title=f"{self.clean_prefix}{command.qualified_name}"
+        )
 
-        # Adds the footer if there
-        note = self.get_ending_note()
-        if note:
-            self.paginator.add_line(note)
-
-        # Sends the completed help output.
-        self.paginator.close_page()  # TODO What does this do?
-        await self.send_pages()
+        if command.description:
+            embed.description = command.description.strip()
+        if command.help:
+            embed.description = command.help.strip()
+        if command.signature:
+            embed.add_field(
+                name="Usage",
+                value=f"{self.clean_prefix}{command.qualified_name} `{command.signature}`"
+            )
+        if command.aliases:
+            embed.add_field(
+                name="Aliases",
+                value=f"{','.join(f'`{self.clean_prefix}{a}`' for a in command.aliases)}"
+            )
+        if self.context.bot.config.get('color'):
+            embed.color = self.context.bot.config.get('color')
+        
+        await self.context.send(embed=embed)
 
 def setup(bot):
     """Lets helpcmd be added and reloaded as an extension."""

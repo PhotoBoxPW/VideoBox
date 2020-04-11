@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# tacibot online util
+# videobox online util
 # Provides utils for various online tools.
 
 '''Online File'''
@@ -24,14 +24,6 @@ class Online():
             haste_key = (await haste_response.json())['key']
             haste_url = f"http://hasteb.in/{haste_key}"
         return haste_url
-
-    def get_webhook(self, url: str):
-        """Easily gets a webhook from a url."""
-
-        return discord.Webhook.from_url(
-            url,
-            adapter=discord.AsyncWebhookAdapter(self.request)
-        )
 
 
 def setup(bot):

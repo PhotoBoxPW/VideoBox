@@ -1,0 +1,7 @@
+discord
+moviepy
+dbots
+aiohttp
+py-cpuinfo
+psutil
+humanize
