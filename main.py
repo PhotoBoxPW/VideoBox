@@ -143,20 +143,32 @@ bot = Bot()
 @bot.listen()
 async def on_command_error(ctx, error):
     """Handles all errors stemming from ext.commands."""
-    print(error)
+
+    if isinstance(error, commands.MissingRequiredArgument):
+        args = ""
+        if ctx.command.signature:
+            args = f" `{ctx.command.signature}`"
+        await ctx.send('\n'.join([
+            f"❗ **`{error.param.name}`** (required argument) is missing!",
+            f"❔ Usage: {ctx.prefix}{ctx.command}{args}"
+        ]))
+        return
 
     if isinstance(error, commands.CommandNotFound) or isinstance(error, commands.CheckFailure):
         return
 
     if isinstance(error, commands.CommandOnCooldown):
-        await ctx.send(F"⏱️ **This command is on a cooldown!** Wait {error.retry_after:.0f} seconds before executing!")
+        await ctx.send(f"⏱️ **This command is on a cooldown!** Wait {error.retry_after:.0f} seconds before executing!")
         return
 
     # Provides a very pretty embed if something's actually a dev's fault.
     elif isinstance(error, commands.CommandInvokeError):
 
         # Prerequisites
-        embed_fallback = f"**An error occured: {type(error).__name__}. Please contact Snazzah.**"
+        embed_fallback = f"**An error occured: {type(error.original).__name__}. Please contact Snazzah.**"
+        formatted_tb = traceback.format_tb(error.original.__traceback__)
+        formatted_tb = ''.join(formatted_tb)
+        print(formatted_tb)
 
         # Sending
         await ctx.send(embed_fallback)

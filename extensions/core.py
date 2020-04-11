@@ -15,7 +15,7 @@ import humanize
 import math
 import psutil
 from datetime import datetime
-from extensions.models.help import TaciHelpCommand
+from extensions.models.help import VBoxHelpCommand
 from extensions.utils import checks
 
 
@@ -32,7 +32,7 @@ class Core(commands.Cog):
         # Help Command
         self._original_help_command = bot.help_command
         if bot.custom_help:
-            bot.help_command = TaciHelpCommand()
+            bot.help_command = VBoxHelpCommand()
         bot.help_command.cog = self
 
     def _humanbytes(self, B) -> str:  # function lifted from StackOverflow
