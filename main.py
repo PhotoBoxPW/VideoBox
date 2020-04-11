@@ -168,6 +168,7 @@ async def on_command_error(ctx, error):
         embed_fallback = f"**An error occured: {type(error.original).__name__}. Please contact Snazzah.**"
         formatted_tb = traceback.format_tb(error.original.__traceback__)
         formatted_tb = ''.join(formatted_tb)
+        print(error.original)
         print(formatted_tb)
 
         # Sending
