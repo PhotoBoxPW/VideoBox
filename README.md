@@ -1,3 +1,31 @@
-# tacibase
+# VideoBox
+A Discord bot that makes and renders funny videos.
 
-**tacibase** - a discord.py bot base that provides various different utilities, logging, botlist handling, online functions, core and developer commands, and other goodies.
+### Installation
+You need [Python 3.6](https://www.python.org/) with [ImageMagick](http://www.imagemagick.org/) and [FFmpeg](https://ffmpeg.org/).
+```
+sudo apt install python3.6 ffmpeg imagemagick
+
+# Install dependencies
+python3.6 -m pip install -r requirements.txt
+```
+
+### Usage
+You can run `python3.6 main.py` (`python3` also works) to start the bot.
+Make sure to copy and paste `config-example.json` into `config.json` and fill in the properties below **BEFORE** starting the bot.
+
+### config.json
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| name | string | The name of the bot. (i.e. "VideoBox") |
+| version | string | The version of the bot. |
+| description | string | The description of the bot. |
+| token | string | The token to the bot, duh. |
+| prefixes | array[string] | The prefixes that the bot will use. |
+| owners | array[int] | The Discord IDs of the people able to use dev commands. |
+| case_insensitive | bool | Whether or not commands aren't case sensitive |
+| custom_help | bool | Whether or not to use custom help |
+| botlist | object | Bot list tokens supported by [dbots.py](https://github.com/dbots-pkg/dbots.py) |
+
+### Sources
+- [Dank Memer](https://github.com/DankMemer) by Melmsie

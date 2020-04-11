@@ -108,7 +108,7 @@ class Bot(commands.Bot):
 
         await self.change_presence(
             activity=discord.Activity(
-                name="FFMPEG render videos | 📹help",
+                name="FFmpeg render videos | 📹help",
                 type=discord.ActivityType.watching
             ),
             status=discord.Status.online
