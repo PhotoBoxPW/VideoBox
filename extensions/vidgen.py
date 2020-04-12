@@ -69,6 +69,7 @@ class VidGen(commands.Cog):
         return file_path, media.spoiler
 
     @commands.command(aliases=['crab', '🦀'])
+    @commands.cooldown(rate=1, per=60, type=commands.BucketType.channel)
     async def crabrave(self, ctx, top_text: str, bottom_text: str):
         """
         Make some crabs rave to something.
@@ -94,8 +95,14 @@ class VidGen(commands.Cog):
         await self._send_video(ctx, video, clip)
 
     async def cog_check(self, ctx):
-        return commands.cooldown(rate=1, per=60, type=commands.BucketType.channel)\
-            (commands.bot_has_guild_permissions(attach_files=True)(ctx.command))
+        if ctx.guild and ctx.guild.me.permissions_in(ctx.channel).attach_files == False:
+            await ctx.send('`📟` I need to be able to attach files in order to do any video generation!')
+            return False
+        if ctx.author.id in ctx.bot.config.get('owners'):
+            ctx.command.reset_cooldown(ctx)
+            return True
+        else:
+            return True
 
 
 def setup(bot):

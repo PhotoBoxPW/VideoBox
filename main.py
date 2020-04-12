@@ -159,7 +159,7 @@ async def on_command_error(ctx, error):
         return
 
     if isinstance(error, commands.CommandOnCooldown):
-        await ctx.send(f"⏱️ **This command is on a cooldown!** Wait {error.retry_after:.0f} seconds before executing!")
+        await ctx.send(f"`⏱️` **This command is on a cooldown!** Wait {error.retry_after:.0f} seconds before executing!")
         return
 
     # Provides a very pretty embed if something's actually a dev's fault.
