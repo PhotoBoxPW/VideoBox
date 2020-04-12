@@ -33,10 +33,22 @@ class FindMediaResponse():
 class DownloadURLError(Exception):
     """Exception that is thrown when URL verification fails."""
 
-    def __init__(self, error_type, error=None):
+    def __init__(self, error_type, error=None,
+        mime=None, response=None):
         # types: badformat, timeout, badstatus
         self.type = error_type
         self.error = error
+        self.mime = mime
+        self.response = response
+    
+    def to_message(self):
+        if self.type == 'badformat':
+            print(self.response)
+            return f"**`{self.mime}`** is an invalid file type for this command!"
+        elif self.type == 'timeout':
+            return f"The request for the URL took too long!"
+        elif self.type == 'timeout':
+            return f"*`{self.response.url}`* returns a **`{self.response.status}`** HTTP status code!"
 
 class TwitterAuthException(Exception):
     """Exception that is thrown when Twitter credentials are invalid."""
@@ -114,10 +126,10 @@ class Utils():
             )
 
         if use_past:
-            if message.channel.guild and message.channel.me.permissions_in(message.channel).read_message_history == False:
+            if message.channel.guild and message.channel.guild.me.permissions_in(message.channel).read_message_history == False:
                 return
             message_limit = self.bot.config['past_message_limit'] or 10
-            async for past_message in message.channel.history(limit=message_limit, before=message.id):
+            async for past_message in message.channel.history(limit=message_limit, before=message):
                 result = await self.find_video(past_message, use_past=False)
                 if result: return result
 
@@ -172,10 +184,10 @@ class Utils():
             )
 
         if use_past:
-            if message.channel.guild and message.channel.me.permissions_in(message.channel).read_message_history == False:
+            if message.channel.guild and message.channel.guild.me.permissions_in(message.channel).read_message_history == False:
                 return
             message_limit = self.bot.config['past_message_limit'] or 10
-            async for past_message in message.channel.history(limit=message_limit, before=message.id):
+            async for past_message in message.channel.history(limit=message_limit, before=message):
                 result = await self.find_photo(past_message, use_past=False)
                 if result: return result
 
@@ -188,15 +200,13 @@ class Utils():
             if not skip_head:
                 async with self.request.head(url, timeout=timeout) as head_response:
                     if not head_response.headers.get('content-type') in supported_formats:
-                        raise DownloadURLError('badformat')
+                        raise DownloadURLError('badformat', response=head_response, mime=head_response.headers.get('content-type'))
                     if head_response.status < 200 or head_response.status >= 300:
-                        raise DownloadURLError('badstatus')
+                        raise DownloadURLError('badstatus', response=head_response)
             
             async with self.request.get(url, timeout=timeout) as response:
-                if not response.headers.get('content-type') in supported_formats:
-                    raise DownloadURLError('badformat')
                 if response.status < 200 or response.status >= 300:
-                    raise DownloadURLError('badstatus')
+                    raise DownloadURLError('badstatus', response=response)
                 # Create cache if it doesn't exist
                 if not os.path.exists('./cache'):
                     os.makedirs('./cache')
@@ -206,7 +216,7 @@ class Utils():
                 response.close()
                 buffer_type = filetype.guess(buffer)
                 if not buffer_type or not buffer_type.mime in supported_formats:
-                    raise DownloadURLError('badformat')
+                    raise DownloadURLError('badformat', response=response, mime=buffer_type.mime)
 
                 # Write file
                 file_path = f"./cache/{uuid.uuid4().hex}.{buffer_type.extension}"
