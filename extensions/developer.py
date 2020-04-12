@@ -27,7 +27,6 @@ class Developer(commands.Cog):
         # Main Stuff
         self.bot = bot
         self.request = bot.request
-        self.online = bot.online
         self.emoji = "\U0001F3D7"
 
         # Repl/Eval Stuff
@@ -111,7 +110,7 @@ class Developer(commands.Cog):
                     await ctx.send(message)
         except discord.HTTPException:
             if not silent:
-                url = await self.online.hastebin(output)
+                url = await self.bot.utils.hastebin(output)
                 embed = discord.Embed(
                     description=f"[View output - click]({url})"
                 )
@@ -147,7 +146,7 @@ class Developer(commands.Cog):
             if (len(result[0]) >= 1024):
                 stdout = result[0].decode('utf-8')
                 string = string + f'[[STDOUT]]\n{stdout}'
-                link = await self.online.hastebin(string)
+                link = await self.bot.utils.hastebin(string)
                 await msg.edit(
                     content=f":x: Content too long. {link}",
                     embed=None)
@@ -156,7 +155,7 @@ class Developer(commands.Cog):
             if (len(result[1]) >= 1024):
                 stdout = result[0].decode('utf-8')
                 string = string + f'[[STDERR]]\n{stdout}'
-                link = await self.online.hastebin(string)
+                link = await self.bot.utils.hastebin(string)
                 await msg.edit(
                     content=f":x: Content too long. {link}",
                     embed=None)

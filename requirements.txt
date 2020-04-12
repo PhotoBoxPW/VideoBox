@@ -3,5 +3,7 @@ moviepy==1.0.0
 dbots
 aiohttp
 py-cpuinfo
+beautifulsoup4
 psutil
 humanize
+filetype

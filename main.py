@@ -30,6 +30,7 @@ class Bot(commands.Bot):
 
         # Setup
         self.extensions_list: List[str] = []
+        self._twitter_token = None
 
         with open('config.json') as f:
             self.config = json.load(f)
