@@ -43,7 +43,6 @@ class DownloadURLError(Exception):
     
     def to_message(self):
         if self.type == 'badformat':
-            print(self.response)
             return f"**`{self.mime}`** is an invalid file type for this command!"
         elif self.type == 'timeout':
             return f"The request for the URL took too long!"
