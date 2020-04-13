@@ -294,7 +294,7 @@ class Developer(commands.Cog):
                 count += 1
                 os.remove(f"./{file}")
 
-        await ctx.send(f"`🗑️` Deleted **`{count}` files.**")
+        await ctx.send(f"`🗑️` Deleted **`{count}`** files.")
 
     async def cog_check(self, ctx):
         return checks.is_bot_owner()(ctx.command)

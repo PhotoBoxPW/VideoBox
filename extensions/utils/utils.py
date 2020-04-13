@@ -8,8 +8,11 @@
 import os
 import re
 import uuid
+import asyncio
 import discord
 import filetype
+import functools
+from concurrent.futures import ThreadPoolExecutor
 from aiohttp import ClientTimeout, ServerTimeoutError
 
 class FindMediaResponse():
@@ -225,6 +228,15 @@ class Utils():
                 return file_path
         except ServerTimeoutError as error:
             raise DownloadURLError('timeout', error)
+
+    def force_async(self, fn):
+        """Forces sync functions to be async"""
+        pool = ThreadPoolExecutor()
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            future = pool.submit(fn, *args, **kwargs)
+            return asyncio.wrap_future(future)  # make it awaitable
+        return wrapper
 
 def setup(bot):
     bot.utils = Utils(bot)
