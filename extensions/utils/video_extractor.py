@@ -36,8 +36,7 @@ class VideoExtractor():
         try:
             for extractor in self.extractors:
                 result = await getattr(self, extractor)(url)
-                if(result != None):
-                    return result
+                if result != None: return result
             return None
         except Exception as e:
             print(e)

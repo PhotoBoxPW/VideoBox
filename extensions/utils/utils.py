@@ -64,8 +64,11 @@ class Utils():
     def __init__(self, bot):
         self.bot = bot
         self.request = bot.request
-        self.url_regex = r"https?://(-\.)?([^\s/?.#-]+\.?)+(/[^\s]*)?(?=|\|\|)"
+        self.url_regex = r"https?://(-\.)?([^\s/?.#-]+\.?)+(/[^\s]*)?"
         self.spoiler_regex = r"\|\|\s*?([^|]+)\s*?\|\|"
+        self.no_embed_regex = r"<([^>\s]+)>"
+        self.markdown_regex = r"[*_~]{1,3}([^*\s]+)[*_~]{1,3}"
+        self.custom_emoji_regex = r"<(a)?:[0-9a-zA-Z-_]+:(\d+)>"
 
         self.VIDEO_FORMATS = [
             'video/mp4',
@@ -85,6 +88,13 @@ class Utils():
             'image/webp',
             'image/gif'
         ]
+    
+    def clean_content(self, content):
+        """Cleans the content from spolers and no-embed markdown"""
+        content = re.sub(self.spoiler_regex, '\\1', content)
+        content = re.sub(self.no_embed_regex, '\\1', content)
+        content = re.sub(self.markdown_regex, '\\1', content)
+        return content
     
     def _in_spoiler(self, message, text):
         spoiler_match = re.search(self.spoiler_regex, message.content)
@@ -116,7 +126,7 @@ class Utils():
             )
 
         # URL in content
-        url_match = re.search(self.url_regex, message.content)
+        url_match = re.search(self.url_regex, self.clean_content(message.content))
         if url_match:
             target_url = url_match[0]
             converted_url = await self.bot.video_extractor.get_url(target_url)
@@ -135,7 +145,7 @@ class Utils():
                 result = await self.find_video(past_message, use_past=False)
                 if result: return result
 
-    async def find_photo(self, message, use_past=True):
+    async def find_photo(self, message, arg='', use_past=True):
         """Finds a photo URL in the Discord channel and returns it."""
 
         # Attachments
@@ -165,25 +175,58 @@ class Utils():
                 )
 
         # URL in content
-        url_match = re.search(self.url_regex, message.content)
+        url_match = re.search(self.url_regex, self.clean_content(message.content))
         if url_match:
             target_url = url_match[0]
             converted_url = await self.bot.photo_extractor.get_url(target_url)
-            spoiler_match = re.search(self.spoiler_regex, message.content)
-
-            is_spoiler = False
-            if spoiler_match:
-                for spoil in spoiler_match.groups():
-                    if spoil.strip() == target_url:
-                        is_spoiler = True
-                        break
-
             real_url = converted_url or target_url
             return FindMediaResponse(
                 self.bot, message, real_url,
-                spoiler=is_spoiler,
+                spoiler=self._in_spoiler(message, target_url),
                 skip_head=converted_url != None
             )
+        
+        if arg:
+            arg = arg.lower()
+            if arg in ['-s', '--server'] and message.channel.guild and message.channel.guild.icon:
+                return FindMediaResponse(
+                    self.bot, message,
+                    str(message.channel.guild.icon_url_as(static_format='png')),
+                    skip_head=True
+                )
+            if arg in ['-b', '--banner'] and message.channel.guild and message.channel.guild.banner:
+                return FindMediaResponse(
+                    self.bot, message,
+                    str(message.channel.guild.banner_url_as(format='png')),
+                    skip_head=True
+                )
+            if arg in ['-p', '--splash'] and message.channel.guild and message.channel.guild.splash:
+                return FindMediaResponse(
+                    self.bot, message,
+                    str(message.channel.guild.splash_url_as(format='png', size=1024)),
+                    skip_head=True
+                )
+            if arg in ['-d', '--discovery-splash'] and message.channel.guild and message.channel.guild.discovery_splash:
+                return FindMediaResponse(
+                    self.bot, message,
+                    str(message.channel.guild.discovery_splash_url_as(format='png', size=1024)),
+                    skip_head=True
+                )
+            elif arg in ['-a', '--avatar']:
+                return FindMediaResponse(
+                    self.bot, message,
+                    message.author.avatar_url_as(static_format='png'),
+                    skip_head=True
+                )
+            
+            emoji_match = re.match(self.custom_emoji_regex, arg)
+            if emoji_match:
+                print(emoji_match)
+                return FindMediaResponse(
+                    self.bot, message,
+                    f"https://cdn.discordapp.com/emojis/{emoji_match.groups()[1]}.{'gif' if emoji_match.groups()[0] else 'png'}?size=1024",
+                    skip_head=True
+                )
 
         if use_past:
             if message.channel.guild and message.channel.guild.me.permissions_in(message.channel).read_message_history == False:

@@ -23,7 +23,7 @@ class PhotoExtractor():
         self.extractors = [
             'extract_vine',
             'extract_twitch_clip',
-            'extract_twitch_vod'
+            'extract_twitch_vod',
             'extract_twitter',
             'extract_imgur',
             'extract_instagram'
@@ -35,8 +35,7 @@ class PhotoExtractor():
         try:
             for extractor in self.extractors:
                 result = await getattr(self, extractor)(url)
-                if(result != None):
-                    return result
+                if result != None: return result
             return None
         except Exception as e:
             print(e)
