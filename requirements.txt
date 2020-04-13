@@ -8,3 +8,4 @@ psutil
 humanize
 filetype
 owo
+scipy
