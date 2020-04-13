@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://get.snaz.in/55hTerC.png" alt="logo" align="left" width=256>
+  <img src="https://get.snaz.in/3zZ3niN.png" alt="logo" align="left" width=256>
   <h1>VideoBox</h1>
   <hr>
   <p>A Discord bot that makes and renders funny videos.</p>
