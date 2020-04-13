@@ -13,6 +13,7 @@ from contextlib import redirect_stdout
 import traceback
 import time
 import io
+import os
 import inspect
 import textwrap
 import subprocess
@@ -34,6 +35,7 @@ class Developer(commands.Cog):
         self.extensions_list = bot.extensions_list
 
     @commands.command(name='eval')
+    @checks.is_bot_owner()
     async def eval_cmd(self, ctx, *, code: str):
         """Evaluates Python code."""
 
@@ -117,6 +119,7 @@ class Developer(commands.Cog):
                 await ctx.send(embed=embed)
 
     @commands.command(aliases=['sys',  'sh'])
+    @checks.is_bot_owner()
     async def system(self, ctx, *, command: str):
         """Runs system commands."""
 
@@ -275,6 +278,23 @@ class Developer(commands.Cog):
         else:
             await ctx.send(
                 "**Can't leave!** _This channel is not inside a guild._")
+
+    @commands.command(aliases=["cc"])
+    @checks.is_bot_owner()
+    async def clearcache(self, ctx):
+        """Clears the current cache."""
+        count = 0
+
+        for file in os.listdir('./cache'):
+            count += 1
+            os.remove(f"./cache/{file}")
+
+        for file in os.listdir('.'):
+            if file.endswith('.mp3'):
+                count += 1
+                os.remove(f"./{file}")
+
+        await ctx.send(f"`🗑️` Deleted **`{count}` files.**")
 
     async def cog_check(self, ctx):
         return checks.is_bot_owner()(ctx.command)

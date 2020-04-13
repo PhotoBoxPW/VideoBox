@@ -1,5 +1,10 @@
-# VideoBox
-A Discord bot that makes and renders funny videos.
+<div align="center">
+  <img src="https://get.snaz.in/55hTerC.png" alt="logo" align="left" width=256>
+  <h1>VideoBox</h1>
+  <hr>
+  <p>A Discord bot that makes and renders funny videos.</p>
+</div>
+<br>
 
 ### Installation
 You need [Python 3.6](https://www.python.org/) with [ImageMagick](http://www.imagemagick.org/) and [FFmpeg](https://ffmpeg.org/).
