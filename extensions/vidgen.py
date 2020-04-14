@@ -9,10 +9,11 @@ import os
 import owo
 import uuid
 import time
+import typing
 import discord
 from discord.ext import commands
 from extensions.models.videocog import VideoCog
-from moviepy.editor import VideoFileClip, TextClip, ImageClip, CompositeVideoClip, ColorClip, AudioFileClip, concatenate_videoclips
+from moviepy.editor import VideoFileClip, TextClip, ImageClip, CompositeVideoClip
 import moviepy.video.fx.all as vfx
 
 class VidGen(VideoCog):
@@ -52,6 +53,29 @@ class VidGen(VideoCog):
 
         final_clip, clips = await process_clip()
         await self._send_video(ctx, final_clip, clips=clips)
+
+    @commands.command(aliases=['theboyslaugh'])
+    @commands.cooldown(rate=1, per=60, type=commands.BucketType.channel)
+    async def theboys(self, ctx, url_or_flag: typing.Optional[str] = None):
+        """The boys laugh at a picture."""
+
+        photodata = await self._download_photo(ctx, url_or_flag)
+        if not photodata: return
+        (file_path, spoiler) = photodata
+
+        @self.bot.utils.force_async
+        def process_clip():
+            clip = VideoFileClip("assets/theboys.mp4")
+            picture = ImageClip(file_path, duration=clip.duration)\
+                .fx(vfx.resize, newsize=[893, 288])\
+                .set_pos( lambda t: (192, 432) )
+            final_clip = CompositeVideoClip([clip, picture])
+
+            return final_clip, [clip, picture]
+
+        final_clip, clips = await process_clip()
+        await self._send_video(ctx, final_clip, clips=clips, spoiler=spoiler)
+        os.remove(file_path)
 
 def setup(bot):
     bot.add_cog(VidGen(bot))

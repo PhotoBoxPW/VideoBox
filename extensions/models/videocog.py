@@ -78,6 +78,20 @@ class VideoCog(commands.Cog):
             return None
         return file_path, media.spoiler
 
+    async def _download_photo(self, ctx, arg=''):
+        media = await self.bot.utils.find_photo(ctx.message, arg)
+        if not media:
+            await ctx.send('`🛑` Could not find media to use!')
+            return None
+        try:
+            file_path = await self.bot.utils.download_url(
+                media.url, supported_formats=self.bot.utils.PHOTO_FORMATS, skip_head=media.skip_head)
+        except Exception as error:
+            if type(error).__name__ == 'DownloadURLError':
+                await ctx.send(f'`🛑` {error.to_message()}')
+            return None
+        return file_path, media.spoiler
+
     async def cog_check(self, ctx):
         if ctx.guild and ctx.guild.me.permissions_in(ctx.channel).attach_files == False:
             await ctx.send('`📟` I need to be able to attach files in order to do any video generation!')
