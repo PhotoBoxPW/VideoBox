@@ -19,7 +19,7 @@ from typing import List, Optional
 from dbots import ClientPoster
 
 
-class Bot(commands.Bot):
+class Bot(commands.AutoShardedBot):
     """Custom Bot Class that subclasses the commands.ext one"""
 
     def __init__(self, **options):
@@ -138,7 +138,7 @@ class Bot(commands.Bot):
 
 
 # Creates Bot object
-bot = Bot()
+bot = Bot(max_messages=1, guild_subscriptions=False)
 
 
 @bot.listen()
@@ -150,8 +150,8 @@ async def on_command_error(ctx, error):
         if ctx.command.signature:
             args = f" `{ctx.command.signature}`"
         await ctx.send('\n'.join([
-            f"❗ **`{error.param.name}`** (required argument) is missing!",
-            f"❔ Usage: {ctx.prefix}{ctx.command}{args}"
+            f"`❗` **`{error.param.name}`** (required argument) is missing!",
+            f"`|` Usage: {ctx.prefix}{ctx.command}{args}"
         ]))
         return
 
@@ -166,7 +166,7 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.CommandInvokeError):
 
         # Prerequisites
-        embed_fallback = f"**An error occured: {type(error.original).__name__}. Please contact Snazzah.**"
+        embed_fallback = f"`🔥` **An error occured: `{type(error.original).__name__}`.** Please report this in the support server. (`📹serverinvite`)"
         formatted_tb = traceback.format_tb(error.original.__traceback__)
         formatted_tb = ''.join(formatted_tb)
         print(error.original)
