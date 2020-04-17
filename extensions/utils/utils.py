@@ -38,7 +38,7 @@ class DownloadURLError(Exception):
 
     def __init__(self, error_type, error=None,
         mime=None, response=None):
-        # types: badformat, timeout, badstatus
+        # types: badformat, timeout, badstatus, toolarge, badrequest
         self.type = error_type
         self.error = error
         self.mime = mime
@@ -51,6 +51,10 @@ class DownloadURLError(Exception):
             return f"The request for the URL took too long!"
         elif self.type == 'timeout':
             return f"*`{self.response.url}`* returns a **`{self.response.status}`** HTTP status code!"
+        elif self.type == 'toolarge':
+            return f"*`{self.response.url}`* is too large to process!"
+        elif self.type == 'badrequest':
+            return f"*`{self.response.url}`* cannot be used!"
 
 class TwitterAuthException(Exception):
     """Exception that is thrown when Twitter credentials are invalid."""
@@ -244,14 +248,21 @@ class Utils():
             # HEAD request
             if not skip_head:
                 async with self.request.head(url, timeout=timeout) as head_response:
+                    if not head_response.headers.get('content-length') or not head_response.headers.get('content-type'):
+                        raise DownloadURLError('badrequest', response=head_response)
                     if not head_response.headers.get('content-type') in supported_formats:
                         raise DownloadURLError('badformat', response=head_response, mime=head_response.headers.get('content-type'))
                     if head_response.status < 200 or head_response.status >= 300:
                         raise DownloadURLError('badstatus', response=head_response)
+                    if int(head_response.headers.get('content-length')) > 100000000: # 100MB
+                        raise DownloadURLError('toolarge', response=head_response, mime=head_response.headers.get('content-type'))
             
             async with self.request.get(url, timeout=timeout) as response:
                 if response.status < 200 or response.status >= 300:
                     raise DownloadURLError('badstatus', response=response)
+                if int(head_response.headers.get('content-length')) > 100000000: # 100MB
+                    raise DownloadURLError('toolarge', response=head_response, mime=head_response.headers.get('content-type'))
+
                 # Create cache if it doesn't exist
                 if not os.path.exists('./cache'):
                     os.makedirs('./cache')
