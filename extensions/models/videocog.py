@@ -64,6 +64,9 @@ class VideoCog(commands.Cog):
         else:
             return text[limit:] + '...'
 
+    def check_processes(self):
+        return self.bot.videos_processing <= 10
+
     async def _download_video(self, ctx):
         media = await self.bot.utils.find_video(ctx.message)
         if not media:
@@ -101,7 +104,6 @@ class VideoCog(commands.Cog):
             return True
         else:
             return True
-
 
 def setup(bot):
     pass
