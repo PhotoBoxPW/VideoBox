@@ -46,7 +46,7 @@ class Core(commands.Cog):
         await ctx.send(f"`🔗` *https://join.photobox.pw/*")
 
     @commands.command(aliases=['📁' ,'githubrepo', 'repo'])
-    async def githup(self, ctx):
+    async def github(self, ctx):
         """Gets the link to the GitHub repository."""
         await ctx.send(f"`🔗` *https://github.com/Snazzah/VideoBox*")
 
