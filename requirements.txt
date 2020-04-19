@@ -9,3 +9,4 @@ humanize
 filetype
 owo
 scipy
+ffmpeg-python

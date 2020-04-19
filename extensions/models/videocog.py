@@ -9,6 +9,7 @@ import os
 import owo
 import uuid
 import time
+import ffmpeg
 import discord
 from discord.ext import commands
 
@@ -56,6 +57,49 @@ class VideoCog(commands.Cog):
         for clip in clips:
             clip.close()
         video.close()
+        os.remove(videoname)
+
+    async def _send_ffmpeg_stream(self, ctx, video, audio, args={}, spoiler=False):
+        """Runs the FFmpeg stream and sends the video to the context."""
+        videoname = f"cache/{uuid.uuid4().hex}.mp4"
+
+        start_time = time.time()
+
+        file_name = f"{ctx.command.name}.mp4"
+        if spoiler:
+            file_name = "SPOILER_" + file_name
+
+        # Create cache if it doesn't exist
+        if not os.path.exists('./cache'):
+            os.makedirs('./cache')
+
+        status_message = await ctx.send(
+            f"`📹` {ctx.author.mention}'s **`{ctx.command.name}`**: Rendering..."
+        )
+        # Run and send file
+        async with ctx.typing():
+            stream = ffmpeg.output(video, audio, videoname, **args)
+            async_run = self.bot.utils.force_async(stream.run)
+            await async_run(quiet=True)
+            if os.path.getsize(videoname) > 1000000 * 8 and self.bot.config['owo_key']: # 8 MB
+                await status_message.edit(
+                    content=f"`📹` {ctx.author.mention}'s **`{ctx.command.name}`**: Uploading..."
+                )
+                async_upload = self.bot.utils.force_async(owo.upload_files)
+                uploaded_files = await async_upload(self.bot.config['owo_key'], videoname)
+                await status_message.delete()
+                await ctx.send(
+                    f"`📹` Rendered **`{ctx.command.name}`** in {time.time() - start_time:.2f} seconds for {ctx.author.mention}!" +
+                    f"\n`🔗` {'||' if spoiler else ''}https://videobox.is-pretty.cool/{uploaded_files[videoname].split('/')[3]}{'||' if spoiler else ''}"
+                )
+            else:
+                await status_message.delete()
+                await ctx.send(
+                    f"`📹` Rendered **`{ctx.command.name}`** in {time.time() - start_time:.2f} seconds for {ctx.author.mention}!",
+                    file = discord.File(fp=videoname, filename=file_name)
+                )
+
+        # Cleanup
         os.remove(videoname)
 
     def _trunc(self, text: str, limit: int = 20) -> str:
