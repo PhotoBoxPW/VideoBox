@@ -124,8 +124,8 @@ class Utils():
         # Attachments
         if len(message.attachments):
             return FindMediaResponse(
-                self.bot, message, message.attachments[0].url,
-                spoiler=message.attachments[0].is_spoiler(),
+                self.bot, message, message.attachments[-1:][0].url,
+                spoiler=message.attachments[-1:][0].is_spoiler(),
                 skip_head=True
             )
 
@@ -155,8 +155,8 @@ class Utils():
         # Attachments
         if len(message.attachments):
             return FindMediaResponse(
-                self.bot, message, message.attachments[0].url,
-                spoiler=message.attachments[0].is_spoiler(),
+                self.bot, message, message.attachments[-1:][0].url,
+                spoiler=message.attachments[-1:][0].is_spoiler(),
                 skip_head=True
             )
 
@@ -255,13 +255,13 @@ class Utils():
                     if head_response.status < 200 or head_response.status >= 300:
                         raise DownloadURLError('badstatus', response=head_response)
                     if int(head_response.headers.get('content-length')) > 100000000: # 100MB
-                        raise DownloadURLError('toolarge', response=head_response, mime=head_response.headers.get('content-type'))
+                        raise DownloadURLError('toolarge', response=head_response)
             
             async with self.request.get(url, timeout=timeout) as response:
                 if response.status < 200 or response.status >= 300:
                     raise DownloadURLError('badstatus', response=response)
-                if int(head_response.headers.get('content-length')) > 100000000: # 100MB
-                    raise DownloadURLError('toolarge', response=head_response, mime=head_response.headers.get('content-type'))
+                if int(response.headers.get('content-length')) > 100000000: # 100MB
+                    raise DownloadURLError('toolarge', response=response)
 
                 # Create cache if it doesn't exist
                 if not os.path.exists('./cache'):

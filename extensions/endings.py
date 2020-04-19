@@ -41,6 +41,8 @@ class Endings(VideoCog):
             # I WAS going to get the last 10 seconds but nvm
             if clip.duration > 10:
                 clip = clip.subclip(0, -clip.duration + 10)
+            
+            safe_duration = max(0, clip.duration - 0.1)
 
             # Startup
             startup_sound = AudioFileClip("assets/tobecontinued/roundabout_start.mp3")
@@ -55,7 +57,7 @@ class Endings(VideoCog):
 
             # Freeze fram stuff
             freeze_frame_sound = AudioFileClip("assets/tobecontinued/roundabout.mp3")
-            freeze_frame = ImageClip(clip.get_frame(clip.duration))\
+            freeze_frame = ImageClip(clip.get_frame(safe_duration))\
                 .fx(vfx.blackwhite).set_duration(freeze_frame_sound.duration)
             arrow = ImageClip("assets/tobecontinued/arrow.png")\
                 .set_pos( lambda t: (min(529, int((1400*t)-400)), 550) )
@@ -93,10 +95,12 @@ class Endings(VideoCog):
             # I WAS going to get the last 10 seconds but nvm
             if clip.duration > 10:
                 clip = clip.subclip(0, -clip.duration + 10)
+            
+            safe_duration = max(0, clip.duration - 0.1)
 
             # Freeze fram stuff
             freeze_frame_sound = AudioFileClip("assets/wellberightback/sound.mp3")
-            freeze_frame = ImageClip(clip.get_frame(clip.duration))\
+            freeze_frame = ImageClip(clip.get_frame(safe_duration))\
                 .fx(vfx.painting, black=0.001)\
                 .fx(vfx.colorx, factor=0.8).set_duration(freeze_frame_sound.duration)
             text = ImageClip("assets/wellberightback/text.png")\
@@ -135,12 +139,14 @@ class Endings(VideoCog):
             # I WAS going to get the last 10 seconds but nvm
             if clip.duration > 10:
                 clip = clip.subclip(0, -clip.duration + 10)
+            
+            safe_duration = max(0, clip.duration - 0.1)
 
             # Freeze fram stuff
             sound = AudioFileClip("assets/fnafjumpscare/sound.mp3")
             gif = VideoFileClip("assets/fnafjumpscare/scare.gif", target_resolution=[720, 1280])\
                 .fx(vfx.mask_color, color=[255,255,255]).set_duration(sound.duration)
-            freeze_frame = ImageClip(clip.get_frame(clip.duration))\
+            freeze_frame = ImageClip(clip.get_frame(safe_duration))\
                 .set_duration(sound.duration)
             freeze_compos = CompositeVideoClip([freeze_frame, gif])\
                 .set_duration(sound.duration).set_audio(sound)
