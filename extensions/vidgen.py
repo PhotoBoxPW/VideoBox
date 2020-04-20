@@ -37,11 +37,6 @@ class VidGen(VideoCog):
 
         if len(top_text) == 0 or len(bottom_text) == 0:
             return await ctx.send('`🛑` Strings can\'t be empty!')
-        
-        if not self.check_processes():
-            return await ctx.send('`🛑` Too many videos are processing at the moment! Try again later!')
-
-        self.bot.videos_processing += 1
 
         @self.bot.utils.force_async
         def process_clip():
@@ -60,7 +55,6 @@ class VidGen(VideoCog):
 
         final_clip, clips = await process_clip()
         await self._send_video(ctx, final_clip, clips=clips)
-        self.bot.videos_processing -= 1
 
     @commands.command(aliases=['theboyslaugh'])
     @commands.cooldown(rate=1, per=60, type=commands.BucketType.channel)
@@ -70,12 +64,6 @@ class VidGen(VideoCog):
         photodata = await self._download_photo(ctx, url_or_flag)
         if not photodata: return
         (file_path, spoiler) = photodata
-
-        if not self.check_processes():
-            os.remove(file_path)
-            return await ctx.send('`🛑` Too many videos are processing at the moment! Try again later!')
-
-        self.bot.videos_processing += 1
 
         @self.bot.utils.force_async
         def process_clip():
@@ -90,7 +78,6 @@ class VidGen(VideoCog):
         final_clip, clips = await process_clip()
         await self._send_video(ctx, final_clip, clips=clips, spoiler=spoiler)
         os.remove(file_path)
-        self.bot.videos_processing -= 1
 
     @commands.command(aliases=['thisvid2', 'thisvid3', 'dvid2', 'dv2', 'thisvid__3', 'thisvid_2'])
     @commands.cooldown(rate=1, per=30, type=commands.BucketType.channel)
@@ -101,17 +88,10 @@ class VidGen(VideoCog):
         if not videodata: return
         (file_path, spoiler) = videodata
 
-        if not self.check_processes():
-            os.remove(file_path)
-            return await ctx.send('`🛑` Too many videos are processing at the moment! Try again later!')
-
-        self.bot.videos_processing += 1
-
         probe = ffmpeg.probe(file_path)
         video_stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'), None)
         if not video_stream:
             os.remove(file_path)
-            self.bot.videos_processing -= 1
             return await ctx.send('`🛑` No video stream was found!')
 
         width = int(video_stream['width'])
@@ -184,7 +164,6 @@ class VidGen(VideoCog):
             args={'r':5, 'ac':1, 'ar':'8k', 'video_bitrate':'150k'}, spoiler=spoiler)
 
         os.remove(file_path)
-        self.bot.videos_processing -= 1
 
 def setup(bot):
     bot.add_cog(VidGen(bot))

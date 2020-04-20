@@ -29,12 +29,6 @@ class Endings(VideoCog):
         if not videodata: return
         (file_path, spoiler) = videodata
 
-        if not self.check_processes():
-            os.remove(file_path)
-            return await ctx.send('`🛑` Too many videos are processing at the moment! Try again later!')
-
-        self.bot.videos_processing += 1
-
         @self.bot.utils.force_async
         def process_clip():
             clip = VideoFileClip(file_path, target_resolution=[720, 1280])
@@ -72,7 +66,6 @@ class Endings(VideoCog):
         final_clip, clips = await process_clip()
         await self._send_video(ctx, final_clip, clips=clips, spoiler=spoiler)
         os.remove(file_path)
-        self.bot.videos_processing -= 1
 
     @commands.command(aliases=['wbrb','ericandre'])
     @commands.cooldown(rate=1, per=60, type=commands.BucketType.channel)
@@ -82,12 +75,6 @@ class Endings(VideoCog):
         videodata = await self._download_video(ctx)
         if not videodata: return
         (file_path, spoiler) = videodata
-
-        if not self.check_processes():
-            os.remove(file_path)
-            return await ctx.send('`🛑` Too many videos are processing at the moment! Try again later!')
-
-        self.bot.videos_processing += 1
 
         @self.bot.utils.force_async
         def process_clip():
@@ -116,7 +103,6 @@ class Endings(VideoCog):
         final_clip, clips = await process_clip()
         await self._send_video(ctx, final_clip, clips=clips, spoiler=spoiler)
         os.remove(file_path)
-        self.bot.videos_processing -= 1
 
     @commands.command(aliases=['fnaf'])
     @commands.cooldown(rate=1, per=60, type=commands.BucketType.channel)
@@ -126,12 +112,6 @@ class Endings(VideoCog):
         videodata = await self._download_video(ctx)
         if not videodata: return
         (file_path, spoiler) = videodata
-
-        if not self.check_processes():
-            os.remove(file_path)
-            return await ctx.send('`🛑` Too many videos are processing at the moment! Try again later!')
-
-        self.bot.videos_processing += 1
 
         @self.bot.utils.force_async
         def process_clip():
@@ -159,7 +139,6 @@ class Endings(VideoCog):
         final_clip, clips = await process_clip()
         await self._send_video(ctx, final_clip, clips=clips, spoiler=spoiler)
         os.remove(file_path)
-        self.bot.videos_processing -= 1
 
 def setup(bot):
     bot.add_cog(Endings(bot))

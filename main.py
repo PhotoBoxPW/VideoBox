@@ -31,7 +31,6 @@ class Bot(commands.AutoShardedBot):
         # Setup
         self.extensions_list: List[str] = []
         self._twitter_token = None
-        self.videos_processing = 0
 
         with open('config.json') as f:
             self.config = json.load(f)
