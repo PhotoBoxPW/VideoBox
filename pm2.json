@@ -1,0 +1,9 @@
+{
+	"apps": [
+		{
+			"name": "VideoBox",
+			"script": "python3.6",
+			"args": "main.py"
+		}
+	]
+}
