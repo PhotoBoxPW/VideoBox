@@ -95,10 +95,6 @@ class Bot(commands.AutoShardedBot):
 
         print('Connected.\n')
 
-        if len(self.config['botlist']) != 0:
-            await self.poster.post()
-            self.poster.start_loop()
-
         # Prerequisites
         if not hasattr(self, 'request'):
             self.request = aiohttp.ClientSession()
@@ -121,6 +117,10 @@ class Bot(commands.AutoShardedBot):
             self._init_extensions()
 
         print('Initialized.\n')
+
+        if len(self.config['botlist']) != 0:
+            await self.poster.post()
+            self.poster.start_loop()
 
     async def on_message(self, message):
         """Handles what the bot does whenever a message comes across."""
