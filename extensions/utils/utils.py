@@ -124,8 +124,8 @@ class Utils():
         # Attachments
         if len(message.attachments):
             return FindMediaResponse(
-                self.bot, message, message.attachments[-1:][0].url,
-                spoiler=message.attachments[-1:][0].is_spoiler(),
+                self.bot, message, message.attachments[0].url,
+                spoiler=message.attachments[0].is_spoiler(),
                 skip_head=True
             )
 
@@ -155,8 +155,8 @@ class Utils():
         # Attachments
         if len(message.attachments):
             return FindMediaResponse(
-                self.bot, message, message.attachments[-1:][0].url,
-                spoiler=message.attachments[-1:][0].is_spoiler(),
+                self.bot, message, message.attachments[0].url,
+                spoiler=message.attachments[0].is_spoiler(),
                 skip_head=True
             )
 
@@ -219,7 +219,7 @@ class Utils():
             elif arg in ['-a', '--avatar']:
                 return FindMediaResponse(
                     self.bot, message,
-                    message.author.avatar_url_as(static_format='png'),
+                    str(message.author.avatar_url_as(static_format='png')),
                     skip_head=True
                 )
             
@@ -229,6 +229,13 @@ class Utils():
                 return FindMediaResponse(
                     self.bot, message,
                     f"https://cdn.discordapp.com/emojis/{emoji_match.groups()[1]}.{'gif' if emoji_match.groups()[0] else 'png'}?size=1024",
+                    skip_head=True
+                )
+            
+            if len(message.mentions) != 0:
+                return FindMediaResponse(
+                    self.bot, message,
+                    str(message.mentions[0].avatar_url_as(static_format='png')),
                     skip_head=True
                 )
 
