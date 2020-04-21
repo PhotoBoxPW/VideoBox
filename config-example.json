@@ -1,6 +1,6 @@
 {
   "name": "VideoBox",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "a bot that creates funny videos",
   "prefixes": [
     "📹 ", "🎥 ", "vbox ", "videobox ",
@@ -11,6 +11,7 @@
 
   "case_insensitive": true,
   "custom_help": true,
+  "stitch_mpy_audio": false,
 
   "blocked": [],
 

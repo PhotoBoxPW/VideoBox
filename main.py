@@ -119,8 +119,8 @@ class Bot(commands.AutoShardedBot):
         print('Initialized.\n')
 
         if len(self.config['botlist']) != 0:
-            await self.poster.post()
             self.poster.start_loop()
+            await self.poster.post()
 
     async def on_message(self, message):
         """Handles what the bot does whenever a message comes across."""

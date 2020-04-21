@@ -33,6 +33,7 @@ Make sure to copy and paste `config-example.json` into `config.json` and fill in
 | owners | array[int] | The Discord IDs of the people able to use dev commands. |
 | case_insensitive | bool | Whether or not commands aren't case sensitive |
 | custom_help | bool | Whether or not to use custom help |
+| stitch_mpy_audio | bool | If your server has problems with MoviePy having no audio in its output, enable this to have FFmpeg add audio instead. This will make rendering slower than usual. |
 | botlist | object | Bot list tokens supported by [dbots.py](https://github.com/dbots-pkg/dbots.py) |
 
 ### Sources

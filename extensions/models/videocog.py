@@ -34,7 +34,22 @@ class VideoCog(commands.Cog):
         # Write and send file
         async with ctx.typing():
             async_write = self.bot.utils.force_async(video.write_videofile)
-            await async_write(videoname, threads=threads, preset=preset, verbose=False, logger=None)
+            await async_write(videoname, threads=threads, preset=preset, verbose=False, logger=None, audio=True,
+                codec='libx264', audio_codec='libmp3lame', temp_audiofile=f'{videoname}.temp-audio.mp3', remove_temp=False)
+
+            # In the rare case that moviepy doesn't correctly add audio, let FFmpeg do it.
+            if self.bot.config['stitch_mpy_audio']:
+                stream = ffmpeg.output(ffmpeg.input(videoname).video,
+                    ffmpeg.input(f'{videoname}.temp-audio.mp3').audio,
+                    f'{videoname}.final.mp4')
+                async_run = self.bot.utils.force_async(stream.run)
+                await async_run(quiet=True)
+                os.remove(f'{videoname}.temp-audio.mp3')
+                os.remove(videoname)
+                videoname += '.final.mp4'
+            else:
+                os.remove(f'{videoname}.temp-audio.mp3')
+
             if os.path.getsize(videoname) > 1000000 * 8 and self.bot.config['owo_key']: # 8 MB
                 await status_message.edit(
                     content=f"`📹` {ctx.author.mention}'s **`{ctx.command.name}`**: Uploading..."
